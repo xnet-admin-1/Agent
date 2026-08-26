@@ -92,22 +92,8 @@ class ProviderStore @Inject constructor(
         mc("@cf/meta/llama-3.1-8b-instruct", tools = true, vision = false, ctx = 131_072, reasoning = null),
       ),
     )
-    val gateway = ProviderProfile(
-      id = "default_gateway",
-      builtinId = "aiope_gateway",
-      label = "AIOPE Gateway",
-      apiKey = ngo.xnet.aiope.feature.chat.BuildConfig.GATEWAY_KEY,
-      apiBase = "https://inf.xnet.ngo/v1",
-      selectedModelId = "google-ai-studio/models-gemma-4-31b-it",
-      isActive = false,
-      modelConfigs = mapOf(
-        mc("google-ai-studio/models-gemma-4-31b-it", tools = true, vision = true, ctx = 256_000),
-        mc("google-ai-studio/models-gemma-4-26b-a4b-it", tools = true, vision = true, ctx = 256_000),
-      ),
-    )
     save(aiStudio)
     save(cloudflare)
-    save(gateway)
     setActive(aiStudio.id)
     fetchModelsAsync(aiStudio)
   }
@@ -149,7 +135,7 @@ class ProviderStore @Inject constructor(
   fun getActive(): ProviderProfile = runBlocking(Dispatchers.IO) {
     dao.getActiveProvider()?.let { runCatching { ProviderProfile.fromJson(JSONObject(it.json)) }.getOrNull() }
   } ?: getAll().firstOrNull()
-    ?: ProviderProfile(builtinId = "aiope_gateway", label = "AIOPE Gateway", apiKey = ngo.xnet.aiope.feature.chat.BuildConfig.GATEWAY_KEY, selectedModelId = "google-ai-studio/models-gemma-4-31b-it")
+    ?: ProviderProfile(builtinId = "google_ai_studio", label = "Google AI Studio", apiKey = ngo.xnet.aiope.feature.chat.BuildConfig.AI_STUDIO_KEY, apiBase = "https://generativelanguage.googleapis.com/v1beta/openai", selectedModelId = "models/gemini-3.5-flash-lite")
 
   fun getById(id: String): ProviderProfile? = getAll().firstOrNull { it.id == id }
 
