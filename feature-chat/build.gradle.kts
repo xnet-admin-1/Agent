@@ -10,9 +10,13 @@ plugins {
 android {
   namespace = "ngo.xnet.aiope.feature.chat"
   defaultConfig {
-    buildConfigField("String", "GATEWAY_KEY", "\"${project.findProperty("GATEWAY_KEY") ?: ""}\"")
-    buildConfigField("String", "AI_STUDIO_KEY", "\"${project.findProperty("AI_STUDIO_KEY") ?: ""}\"")
-    buildConfigField("String", "CLOUDFLARE_AI_KEY", "\"${project.findProperty("CLOUDFLARE_AI_KEY") ?: ""}\"")
+    val localProps = java.util.Properties().apply {
+      rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+    }
+    fun key(name: String) = localProps.getProperty(name) ?: project.findProperty(name)?.toString() ?: System.getenv(name) ?: ""
+    buildConfigField("String", "GATEWAY_KEY", "\"${key("GATEWAY_KEY")}\"")
+    buildConfigField("String", "AI_STUDIO_KEY", "\"${key("AI_STUDIO_KEY")}\"")
+    buildConfigField("String", "CLOUDFLARE_AI_KEY", "\"${key("CLOUDFLARE_AI_KEY")}\"")
   }
   buildFeatures { buildConfig = true }
 }
