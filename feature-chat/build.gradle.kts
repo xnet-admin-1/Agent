@@ -11,6 +11,8 @@ android {
   namespace = "ngo.xnet.aiope.feature.chat"
   defaultConfig {
     buildConfigField("String", "GATEWAY_KEY", "\"${project.findProperty("GATEWAY_KEY") ?: ""}\"")
+    buildConfigField("String", "AI_STUDIO_KEY", "\"${project.findProperty("AI_STUDIO_KEY") ?: ""}\"")
+    buildConfigField("String", "CLOUDFLARE_AI_KEY", "\"${project.findProperty("CLOUDFLARE_AI_KEY") ?: ""}\"")
   }
   buildFeatures { buildConfig = true }
 }

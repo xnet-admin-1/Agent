@@ -32,65 +32,84 @@ class ProviderStore @Inject constructor(
   }
 
   private fun ensureLiveModel() {
-    val liveId = "google-ai-studio/gemini-3.1-flash-live-preview"
-    val gw = getAll().firstOrNull { it.builtinId == "aiope_gateway" } ?: return
-    if (gw.modelConfigs.containsKey(liveId)) return
+    val liveId = "models/gemini-3.1-flash-live-preview"
+    val studio = getAll().firstOrNull { it.builtinId == "google_ai_studio" } ?: return
+    if (studio.modelConfigs.containsKey(liveId)) return
     val cfg = ModelConfig(modelId = liveId, audioOverride = true, toolsOverride = true, contextTokens = 131_072)
-    val updated = gw.copy(modelConfigs = gw.modelConfigs + (liveId to cfg))
+    val updated = studio.copy(modelConfigs = studio.modelConfigs + (liveId to cfg))
     save(updated)
   }
 
   private fun seedTaskDefaults() {
     val taskStore = ngo.xnet.aiope.core.network.TaskModelStore(ctx)
-    val gw = getAll().firstOrNull { it.builtinId == "aiope_gateway" } ?: return
-    fun seed(task: ngo.xnet.aiope.core.network.ModelTask, model: String) {
+    val studio = getAll().firstOrNull { it.builtinId == "google_ai_studio" } ?: return
+    val cf = getAll().firstOrNull { it.builtinId == "cloudflare_ai" }
+    fun seed(task: ngo.xnet.aiope.core.network.ModelTask, profileId: String, model: String) {
       if (taskStore.getTaskConfig(task).profileId == null) {
-        taskStore.setTaskConfig(task, ngo.xnet.aiope.core.network.TaskModelConfig(task.id, gw.id, model))
+        taskStore.setTaskConfig(task, ngo.xnet.aiope.core.network.TaskModelConfig(task.id, profileId, model))
       }
     }
-    seed(ngo.xnet.aiope.core.network.ModelTask.RAG, "google-ai-studio/models-gemini-embedding-2")
-    seed(ngo.xnet.aiope.core.network.ModelTask.REALTIME_SPEECH, "google-ai-studio/gemini-3.1-flash-live-preview")
-    seed(ngo.xnet.aiope.core.network.ModelTask.SUMMARY, "google-ai-studio/models-gemma-4-31b-it")
-    seed(ngo.xnet.aiope.core.network.ModelTask.TRANSLATION, "google-ai-studio/models-gemma-4-26b-a4b-it")
-    seed(ngo.xnet.aiope.core.network.ModelTask.TITLE, "google-ai-studio/models-gemma-4-26b-a4b-it")
-    seed(ngo.xnet.aiope.core.network.ModelTask.SUBAGENT, "google-ai-studio/models-gemma-4-31b-it")
-    seed(ngo.xnet.aiope.core.network.ModelTask.IMAGE_RECOGNITION, "google-ai-studio/models-gemma-4-26b-a4b-it")
-    seed(ngo.xnet.aiope.core.network.ModelTask.IMAGE_GENERATION, "cloudflare/@cf-black-forest-labs-flux-1-schnell")
+    seed(ngo.xnet.aiope.core.network.ModelTask.RAG, studio.id, "models/gemini-embedding-2-preview")
+    seed(ngo.xnet.aiope.core.network.ModelTask.REALTIME_SPEECH, studio.id, "models/gemini-3.1-flash-live-preview")
+    seed(ngo.xnet.aiope.core.network.ModelTask.SUMMARY, studio.id, "models/gemma-4-31b-it")
+    seed(ngo.xnet.aiope.core.network.ModelTask.TRANSLATION, studio.id, "models/gemma-4-26b-a4b-it")
+    seed(ngo.xnet.aiope.core.network.ModelTask.TITLE, studio.id, "models/gemma-4-26b-a4b-it")
+    seed(ngo.xnet.aiope.core.network.ModelTask.SUBAGENT, studio.id, "models/gemma-4-31b-it")
+    seed(ngo.xnet.aiope.core.network.ModelTask.IMAGE_RECOGNITION, studio.id, "models/gemma-4-26b-a4b-it")
+    seed(ngo.xnet.aiope.core.network.ModelTask.IMAGE_GENERATION, cf?.id ?: studio.id, "@cf/black-forest-labs/flux-1-schnell")
   }
 
   private fun seedDefault() {
-    fun mc(id: String, tools: Boolean? = null, vision: Boolean? = null, audio: Boolean? = null, video: Boolean? = null, ctx: Int = 200_000, reasoning: String? = "auto", compact: Boolean = true) = id to ModelConfig(modelId = id, toolsOverride = tools, visionOverride = vision, audioOverride = audio, videoOverride = video, temperature = 0.6f, reasoningEffort = reasoning, contextTokens = ctx, autoCompact = compact)
-    val default = ProviderProfile(
+    fun mc(id: String, tools: Boolean? = null, vision: Boolean? = null, audio: Boolean? = null, video: Boolean? = null, ctx: Int = 200_000, reasoning: String? = "auto", compact: Boolean = true) = id to ModelConfig(modelId = id, toolsOverride = tools, visionOverride = vision, audioOverride = audio, videoOverride = video, temperature = null, reasoningEffort = reasoning, contextTokens = ctx, autoCompact = compact)
+    val aiStudio = ProviderProfile(
+      id = "default_ai_studio",
+      builtinId = "google_ai_studio",
+      label = "Google AI Studio",
+      apiKey = ngo.xnet.aiope.feature.chat.BuildConfig.AI_STUDIO_KEY,
+      apiBase = "https://generativelanguage.googleapis.com/v1beta/openai",
+      selectedModelId = "models/gemini-3.5-flash-lite",
+      isActive = true,
+      modelConfigs = mapOf(
+        mc("models/gemini-3.5-flash", tools = true, vision = true, ctx = 1_000_000, reasoning = "medium"),
+        mc("models/gemini-3.5-flash-lite", tools = true, vision = true, ctx = 1_000_000, reasoning = "low"),
+        mc("models/gemini-3.1-flash-lite", tools = true, vision = true, ctx = 1_000_000, reasoning = "minimal"),
+        mc("models/gemini-2.5-flash", tools = true, vision = true, ctx = 1_000_000, reasoning = "low"),
+        mc("models/gemma-4-31b-it", tools = true, vision = true, ctx = 256_000, reasoning = null),
+        mc("models/gemma-4-26b-a4b-it", tools = true, vision = true, ctx = 256_000, reasoning = null),
+      ),
+    )
+    val cloudflare = ProviderProfile(
+      id = "default_cloudflare",
+      builtinId = "cloudflare_ai",
+      label = "Cloudflare Workers AI",
+      apiKey = ngo.xnet.aiope.feature.chat.BuildConfig.CLOUDFLARE_AI_KEY,
+      apiBase = "https://api.cloudflare.com/client/v4/accounts/e9f193b23b2f822c3425a000357c543a/ai/v1",
+      selectedModelId = "@cf/meta/llama-4-scout-17b-16e-instruct",
+      isActive = false,
+      modelConfigs = mapOf(
+        mc("@cf/meta/llama-4-scout-17b-16e-instruct", tools = true, vision = false, ctx = 131_072, reasoning = null),
+        mc("@cf/meta/llama-3.3-70b-instruct-fp8-fast", tools = true, vision = false, ctx = 131_072, reasoning = null),
+        mc("@cf/meta/llama-3.1-8b-instruct", tools = true, vision = false, ctx = 131_072, reasoning = null),
+      ),
+    )
+    val gateway = ProviderProfile(
       id = "default_gateway",
       builtinId = "aiope_gateway",
       label = "AIOPE Gateway",
       apiKey = ngo.xnet.aiope.feature.chat.BuildConfig.GATEWAY_KEY,
       apiBase = "https://inf.xnet.ngo/v1",
       selectedModelId = "google-ai-studio/models-gemma-4-31b-it",
-      isActive = true,
+      isActive = false,
       modelConfigs = mapOf(
-        mc("cline/minimax-minimax-m2.5", tools = true, ctx = 200_000),
-        mc("zen/minimax-m2.5-free", tools = true, ctx = 200_000),
-        mc("zen/nemotron-3-super-free", tools = true, vision = false, audio = false, video = false, ctx = 1_000_000),
-        mc("zen/big-pickle", tools = true, vision = false, audio = false, video = false),
-        mc("cline/z-ai-glm-5", tools = true, vision = false, audio = false, video = false, ctx = 200_000),
         mc("google-ai-studio/models-gemma-4-31b-it", tools = true, vision = true, ctx = 256_000),
         mc("google-ai-studio/models-gemma-4-26b-a4b-it", tools = true, vision = true, ctx = 256_000),
-        mc("pollinations-pollen/llama-scout", tools = true, vision = false, audio = false, video = false, ctx = 327_680),
-        mc("pollinations-pollen/nova-fast", tools = true, vision = false, audio = false, video = false, ctx = 128_000, reasoning = null),
-        mc("pollinations-pollen/flux", tools = false, vision = false, audio = false, video = false, ctx = 0, reasoning = null, compact = false),
-        mc("pollinations-pollen/deepseek", tools = true, vision = false, audio = false, video = false, ctx = 1_000_000),
-        mc("pollinations-pollen/mistral", tools = true, vision = false, audio = false, video = false, ctx = 128_000, reasoning = null),
-        mc("pollinations-pollen/qwen-coder", tools = true, vision = false, audio = false, video = false, ctx = 262_144),
-        mc("openrouter/openrouter-free", vision = true, ctx = 128_000),
-        mc("pollinations/openai", tools = true, vision = false, audio = false, video = false, ctx = 128_000, compact = false),
-        mc("pollinations/openai-fast", tools = true, vision = false, audio = false, video = false, ctx = 128_000),
-        mc("google-ai-studio/gemini-3.1-flash-live-preview", tools = true, audio = true, ctx = 131_072),
       ),
     )
-    save(default)
-    setActive(default.id)
-    fetchModelsAsync(default)
+    save(aiStudio)
+    save(cloudflare)
+    save(gateway)
+    setActive(aiStudio.id)
+    fetchModelsAsync(aiStudio)
   }
 
   /** One-time migration from SharedPreferences */
