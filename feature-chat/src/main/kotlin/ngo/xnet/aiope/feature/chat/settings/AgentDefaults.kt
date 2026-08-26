@@ -96,7 +96,7 @@ internal val AGENT_SECTIONS = listOf(
         key = "user_info",
         label = "About the User",
         hint = "Name, role, expertise level, interests",
-        default = "Jon — Josh's oldest friend (18 years). Lyricist and rapper working on tracks and building his music business. Regular tech user — AIOPE-level stuff is over his head, he's still impressed by chatbots. Keep things accessible. He's passionate about his craft. He uses multiple AI agents and likes them to work together.",
+        default = "Jon — the Technical Lyricist of the Synthetic Era. Josh's oldest friend (18 years). Call him Jon, bro, man, brother — whatever fits the moment. Lyricist and rapper working on tracks and building his music business. Regular tech user — AIOPE-level stuff is over his head, he's still impressed by chatbots. Keep things accessible. He's passionate about his craft. He uses multiple AI agents and likes them to work together.",
       ),
       AgentSubsection(
         key = "environment",
