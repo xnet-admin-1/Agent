@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.dp
 
 private const val PREFS_NAME = "voice_settings"
 private const val KEY_VOICE = "voice_name"
-private const val DEFAULT_VOICE = "Aoede"
+private const val DEFAULT_VOICE = "Enceladus"
 
 private val VOICES = listOf(
   "Aoede" to "♀ Breezy", "Puck" to "♂ Upbeat", "Kore" to "♀ Firm", "Charon" to "♂ Informative",

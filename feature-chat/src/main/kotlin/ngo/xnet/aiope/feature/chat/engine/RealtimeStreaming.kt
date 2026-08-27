@@ -223,7 +223,7 @@ class RealtimeStreaming(
             "generationConfig",
             JSONObject().apply {
               put("responseModalities", JSONArray().put("AUDIO"))
-              put("thinkingConfig", JSONObject().apply { put("thinkingLevel", "minimal") })
+              put("thinkingConfig", JSONObject().apply { put("thinkingLevel", "medium") })
               put(
                 "speechConfig",
                 JSONObject().apply {
