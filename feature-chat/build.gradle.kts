@@ -7,17 +7,19 @@ plugins {
   id("com.google.devtools.ksp")
 }
 
+val localKeyMap: Map<String, String> = rootProject.file("local.properties")
+  .takeIf { it.exists() }?.readLines()
+  ?.filter { it.contains("=") && !it.startsWith("#") }
+  ?.associate { it.substringBefore("=").trim() to it.substringAfter("=").trim() }
+  ?: emptyMap()
+fun apiKey(name: String): String = localKeyMap[name] ?: findProperty(name)?.toString() ?: System.getenv(name) ?: ""
+
 android {
   namespace = "ngo.xnet.aiope.feature.chat"
   defaultConfig {
-    // Keys loaded from (in priority order): local.properties > gradle.properties > environment > empty
-    val localProps = java.util.Properties().apply {
-      rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
-    }
-    fun key(name: String) = localProps.getProperty(name) ?: project.findProperty(name)?.toString() ?: System.getenv(name) ?: ""
-    buildConfigField("String", "GATEWAY_KEY", "\"${key("GATEWAY_KEY")}\"")
-    buildConfigField("String", "AI_STUDIO_KEY", "\"${key("AI_STUDIO_KEY")}\"")
-    buildConfigField("String", "CLOUDFLARE_AI_KEY", "\"${key("CLOUDFLARE_AI_KEY")}\"")
+    buildConfigField("String", "GATEWAY_KEY", "\"${apiKey("GATEWAY_KEY")}\"")
+    buildConfigField("String", "AI_STUDIO_KEY", "\"${apiKey("AI_STUDIO_KEY")}\"")
+    buildConfigField("String", "CLOUDFLARE_AI_KEY", "\"${apiKey("CLOUDFLARE_AI_KEY")}\"")
   }
   buildFeatures { buildConfig = true }
 }
