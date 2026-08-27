@@ -227,6 +227,7 @@ class RealtimeStreaming(
               put(
                 "speechConfig",
                 JSONObject().apply {
+                  put("languageCode", "en-US")
                   put(
                     "voiceConfig",
                     JSONObject().apply {
