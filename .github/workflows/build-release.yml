@@ -23,7 +23,7 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build arm64-v8a Release APK
+      - name: Build Release APK
         env:
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
@@ -32,9 +32,15 @@ jobs:
           API_KEY: ${{ secrets.API_KEY }}
         run: |
           if [ -n "$SIGNING_KEYSTORE_BASE64" ]; then
-            echo "$SIGNING_KEYSTORE_BASE64" | base64 --decode > app/keystore.jks
+            echo "$SIGNING_KEYSTORE_BASE64" | base64 --decode > keystore.jks
           fi
-          ./gradlew assembleArm64Release
+          # Create keystore.properties for the build
+          echo "storeFile=../keystore.jks" > keystore.properties
+          echo "storePassword=$SIGNING_STORE_PASSWORD" >> keystore.properties
+          echo "keyAlias=$SIGNING_KEY_ALIAS" >> keystore.properties
+          echo "keyPassword=$SIGNING_KEY_PASSWORD" >> keystore.properties
+          
+          ./gradlew assembleRelease
 
       - name: Generate Tag
         id: tag
@@ -48,7 +54,7 @@ jobs:
         with:
           tag_name: ${{ steps.tag.outputs.tag }}
           name: "Release ${{ steps.tag.outputs.tag }}"
-          files: app/build/outputs/apk/arm64/release/*.apk
+          files: app/build/outputs/apk/release/*.apk
           draft: false
           prerelease: false
         env:
